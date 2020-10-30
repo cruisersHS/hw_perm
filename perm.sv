@@ -64,6 +64,18 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 			cy = y + 1;
 		end
 	endtask
+
+	task cyx55;
+		if(cx >= 4 && cy >= 4) begin
+			cx = 0;
+			cy = 0;
+		end else if (cx >= 4) begin
+			cy = y + 1;
+			cx = 0;
+		end else begin
+			cx = x + 1;
+		end
+	endtask
 	
 	//state logic
 	always @(posedge clk) begin
@@ -71,7 +83,7 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 		case(cs)
 			IDLE: begin
 				if(write_rdy) begin
-					ns = INPUT;
+					ns = INPUT_D;
 				end else begin
 					ns = IDLE;
 				end
@@ -81,7 +93,7 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 				if(cx == 4 && cy == 4) begin
 					ns = THETA_1;
 				end else begin
-					ns = INPUT;
+					ns = INPUT_D;
 				end
 			end
 			
@@ -159,7 +171,7 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 				m2wy = 0;
 				m2wd = temp_c_acc;
 				m2wr = 1;
-				$display("THETA_1, m2wd(%d) = %h, %t", m2wx, m2wd, $time);
+				$display("THETA_1, m2wd(%d) = %h, cx%dcy%d, %t", m2wx, m2wd, cx, cy, $time);
 			end
 			
 			default: begin
@@ -178,13 +190,13 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 		case(cs)
 			IDLE: begin
 				if(pushin) begin
-					cy = y + 1;
+					cx = x + 1;
 				end
 			end
 
 			INPUT_D: begin			//5x5
 				//$display("cx = %d, cy = %d, %t", cx, cy, $time);
-				cxy55();
+				cyx55();
 			end
 			
 			THETA_1: begin			//5x5
@@ -203,9 +215,12 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 		if(!rst) begin
 			case(cs)
 				THETA_1: begin
-					if(cy == 0) temp_c <= #1 m1rd;
-					else if (cy <= 4) temp_c <= #1 temp_c ^ m1rd;
-					else temp_c <= #1 0;
+					if(y == 0) temp_c <= #1 m1rd;
+					else if (y < 4) temp_c <= #1 temp_c ^ m1rd;
+					else begin 
+						$display("x%dy%d, temp_c%h, rd%h, acc%h,", x, y, temp_c, m1rd, temp_c_acc);
+						temp_c <= #1 0;
+					end
 				end
 				
 				default: temp_c <= #1 0;
@@ -253,7 +268,7 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 			if(cx == 4 && cy == 4) begin
 				stopin <= #1 1;
 			end else begin
-				if(cs == INPUT_D) stopin <= #1 0;
+				if(cs == INPUT_D || cs == IDLE) stopin <= #1 0;
 				else stopin <= #1 1;
 			end
 		end else begin
