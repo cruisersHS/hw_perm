@@ -99,7 +99,7 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 			
 			THETA_1: begin
 				if(cx == 4 && cy == 4) begin
-					//$display("\nfinished THETA_1 %t\n", $time);
+					$display("\nFINISHED THETA_1 %t\n", $time);
 					ns = THETA_2;
 				end else begin
 					ns = THETA_1;
@@ -107,6 +107,15 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 			end
 			
 			THETA_2: begin		//stored in m2(y=0)
+				if(cx == 4) begin
+					$display("\nFINISHED THETA_2 %t\n", $time);
+					ns = THETA_3;
+				end else begin
+					ns = THETA_2;
+				end
+			end
+			
+			THETA_3: begin
 				$finish;
 			end
 			
@@ -188,6 +197,56 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 		endcase
 	end
 	
+	//m2 read
+	always @(*) begin
+		case(cs)
+			THETA_2: begin
+				m2rx = x;
+				m2ry = 0;
+			end
+			
+			default: begin
+				m2rx = 0;
+				m2ry = 0;
+			end
+		endcase
+	end
+	
+	//m3 write
+	always @(*) begin
+		case(cs)
+			THETA_1: begin
+				m3wx = x;
+				m3wy = 0;
+				m3wd = temp_c_acc;
+				m3wr = 1;
+			end
+			
+			default: begin
+				m3wx = 0;
+				m3wy = 0;
+				m3wd = 0;
+				m3wr = 0;
+			end
+		endcase
+	end
+	
+	//m3 read
+	always @(*) begin
+		case(cs)
+			THETA_2: begin
+				m3rx = x;
+				m3ry = 0;
+			end
+			
+			default: begin
+				m3rx = 0;
+				m3ry = 0;
+			end
+		endcase
+	end
+	
+	
 	//cx, cy, always use x, y for assignment
 	always @(posedge clk) begin
 		cx = x;
@@ -206,6 +265,14 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 			
 			THETA_1: begin			//5x5
 				cxy55();
+			end
+			
+			THETA_2: begin
+				cy = 0;
+				if(cx <= 4) begin
+					$display("JUST A TRY x%d", cx);
+					cx = x + 1;
+				end
 			end
 			
 			default: begin
