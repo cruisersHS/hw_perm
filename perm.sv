@@ -46,6 +46,7 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 	
 	reg [2:0] x, y, cx, cy;
 	reg write_rdy, write_rdy_d;		//write ready
+	reg [1:0] buffer;
 	
 	reg [63:0] temp_c, temp_c_acc;
 	
@@ -188,6 +189,13 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 				$display("THETA_1, m2wd(%d) = %h, cx%dcy%d, %t", m2wx, m2wd, cx, cy, $time);
 			end
 			
+			THETA_2: begin
+				m2wy = 1;
+				m2wx = x;
+				m2wd = temp_c;
+				m2wr = 1;
+			end
+			
 			default: begin
 				m2wx = 0;
 				m2wy = 0;
@@ -201,7 +209,7 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 	always @(*) begin
 		case(cs)
 			THETA_2: begin
-				m2rx = x;
+				m2rx = `sub_1(x);
 				m2ry = 0;
 			end
 			
@@ -235,7 +243,7 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 	always @(*) begin
 		case(cs)
 			THETA_2: begin
-				m3rx = x;
+				m3rx = `add_1(x);
 				m3ry = 0;
 			end
 			
@@ -270,7 +278,6 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 			THETA_2: begin
 				cy = 0;
 				if(cx <= 4) begin
-					$display("JUST A TRY x%d", cx);
 					cx = x + 1;
 				end
 			end
@@ -280,6 +287,20 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 				cy = 0;
 			end
 		endcase
+	end
+	
+	//buffer (not now)
+	always_ff @(posedge clk or posedge rst) begin
+		if(!rst) begin
+			case(cs)
+				/* THETA_2: begin
+					if(buffer == 0) buffer <= #1 1;
+					else buffer <= #1 0;
+				end */
+				
+				default: buffer <= #1 0;
+			endcase
+		end else buffer <= #1 0;
 	end
 	
 	//temp_c
@@ -292,6 +313,13 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 					else begin 
 						$display("x%dy%d, temp_c%h, rd%h, acc%h,", x, y, temp_c, m1rd, temp_c_acc);
 						temp_c <= #1 0;
+					end
+				end
+				
+				THETA_2: begin
+					if(cx <= 4) begin
+						temp_c <= #1 (m2rd ^ `sub64(m3rd));
+						$display("temp_c calc: m2rd:%h, m3rd:%h, tempc:%h, %t", m2rd, m3rd, temp_c, $time);
 					end
 				end
 				
