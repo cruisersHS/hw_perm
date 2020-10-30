@@ -65,7 +65,7 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 			INPUT: begin
 				if(cx == 4 && cy == 4) begin
 					//ns = THETA_1
-					$finish;
+					#50 $finish;
 				end else begin
 					ns = INPUT;
 				end
@@ -76,23 +76,31 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 		endcase
 	end
 	
-	//data
+	//_d
 	always @(*) begin
 		pushout_d = pushout;
 		dout_d = dout;
 		firstout_d = firstout;
 		stopin_d = stopin;
+	end
+	
+	//data in m1 write
+	always @(*) begin
 		case(cs)
-			IDLE: begin
-				$display("\nIDLE\n, %t", $time);
-			end
-			
 			INPUT: begin
 				$display("INPUT,x%dy%d,din=%h, %t", x, y, din, $time);
-				m1wx = x;
-				m1wy = y;
+				m1wx = cx;
+				m1wy = cy;
+				m1wr = 1;
+				m1wd = din;
 			end
 			
+			default: begin
+				m1wx = 0;
+				m1wy = 0;
+				m1wd = 0;
+				m1wr = 0;
+			end
 		endcase
 	end
 	
@@ -100,27 +108,25 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 	always @(posedge clk) begin
 		cx = x;
 		cy = y;
-		m1wr = 0;
 		case(cs)
-			IDLE: begin
-			end
 			
 			INPUT: begin
 				//$display("cx = %d, cy = %d, %t", cx, cy, $time);
 				if(cx >= 4 && cy >= 4) begin
 					cx = 0;
 					cy = 0;
-					m1wr = 1;
 				end else if (cy >= 4) begin
 					cx = x + 1;
 					cy = 0;
-					m1wr = 1;
 				end else begin
 					cy = y + 1;
-					m1wr = 1;
 				end
 			end
 			
+			default: begin
+				cx = 0;
+				cy = 0;
+			end
 		endcase
 	end
 	
@@ -138,7 +144,7 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 		end
 	end
 	
-	//cs, ns
+	//cs, ns, rst
 	always_ff @(posedge clk or posedge rst) begin
 		if(rst) begin
 			cs <=#1 0;
@@ -153,7 +159,6 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 			x <= #1 0;
 			y <= #1 0;
 			stopin <= #1 0;
-			//write_rdy <= #1 0;
 			pushout <= #1 0;
 			firstout <= #1 0;
 			dout <= #1 0;
@@ -161,7 +166,6 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 			x <= #1 cx;
 			y <= #1 cy;
 			stopin <= #1 stopin_d;
-			//write_rdy <= #1 write_rdy_d;
 			pushout <= #1 pushout_d;
 			firstout <= #1 firstout_d;
 			dout <= #1 dout_d;
