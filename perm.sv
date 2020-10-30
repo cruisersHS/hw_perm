@@ -81,6 +81,7 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 		pushout_d = pushout;
 		dout_d = dout;
 		firstout_d = firstout;
+		stopin_d = stopin;
 		case(cs)
 			IDLE: begin
 				$display("\nIDLE\n, %t", $time);
@@ -96,28 +97,27 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 	end
 	
 	//cx, cy
-	always_ff @(posedge clk) begin
-		cx <= #1 x;
-		cy <= #1 y;
-		m1wr <= #1 0;
+	always @(posedge clk) begin
+		cx = x;
+		cy = y;
+		m1wr = 0;
 		case(cs)
 			IDLE: begin
 			end
 			
 			INPUT: begin
-				$display("cx = %d, cy = %d, %t", cx, cy, $time);
-				if(cx == 4 && cy == 4) begin
-					cx <= #1 0;
-					cy <= #1 0;
-					m1wr <= #1 1;
-				end else if (cy == 4) begin
-					cx <= #1 x + 1;
-					cy <= #1 0;
-					m1wr <= #1 1;
+				//$display("cx = %d, cy = %d, %t", cx, cy, $time);
+				if(cx >= 4 && cy >= 4) begin
+					cx = 0;
+					cy = 0;
+					m1wr = 1;
+				end else if (cy >= 4) begin
+					cx = x + 1;
+					cy = 0;
+					m1wr = 1;
 				end else begin
-					cx <= #1 x + 1;
-					cy <= #1 y + 1;
-					m1wr <= #1 1;
+					cy = y + 1;
+					m1wr = 1;
 				end
 			end
 			
@@ -125,12 +125,16 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 	end
 	
 	//rdy
-	always_ff @(posedge clk) begin
-		//write_rdy_d = #1 write_rdy;
-		if(pushin && !stopin) begin
-			write_rdy_d <= #1 1;
+	always_ff @(posedge clk or posedge rst) begin
+		if(!rst) begin
+			if(pushin && !stopin) begin
+				$display("pushin received!! push data is %h %t", din, $time);
+				write_rdy <= #1 1;
+			end else begin
+				write_rdy <= #1 0;
+			end
 		end else begin
-			write_rdy_d <= #1 0;
+			write_rdy <= #1 0;
 		end
 	end
 	
@@ -149,7 +153,7 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 			x <= #1 0;
 			y <= #1 0;
 			stopin <= #1 0;
-			write_rdy <= #1 0;
+			//write_rdy <= #1 0;
 			pushout <= #1 0;
 			firstout <= #1 0;
 			dout <= #1 0;
@@ -157,7 +161,7 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 			x <= #1 cx;
 			y <= #1 cy;
 			stopin <= #1 stopin_d;
-			write_rdy <= #1 write_rdy_d;
+			//write_rdy <= #1 write_rdy_d;
 			pushout <= #1 pushout_d;
 			firstout <= #1 firstout_d;
 			dout <= #1 dout_d;
