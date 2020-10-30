@@ -99,14 +99,19 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 			
 			THETA_1: begin
 				if(cx == 4 && cy == 4) begin
-					$display("\nfinished THETA_1 %t\n", $time);
-					$finish;
+					//$display("\nfinished THETA_1 %t\n", $time);
+					ns = THETA_2;
 				end else begin
 					ns = THETA_1;
 				end
 			end
 			
+			THETA_2: begin		//stored in m2(y=0)
+				$finish;
+			end
+			
 			default: begin
+				ns = IDLE;
 			end
 		endcase
 	end
@@ -233,7 +238,8 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 	//temp_c_acc
 	always_ff @(posedge clk or posedge rst) begin
 		if(!rst) begin
-			temp_c_acc <= #1 m1rd ^ temp_c;
+			if (y < 4) temp_c_acc <= #1 m1rd ^ temp_c;
+			else temp_c_acc <= #1 0;
 		end else begin
 			temp_c_acc <= #1 0;
 		end
