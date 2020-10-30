@@ -28,6 +28,10 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 	);
 	
 	reg stopin_d;
+	reg pushout_d;
+	reg firstout_d;
+	reg [63:0] dout_d;
+
 	
 	enum [3:0] {
 	IDLE,
@@ -47,7 +51,7 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 	//stopin: x4y4 stop input
 	
 	//state logic
-	always_comb @(posedge clk) begin
+	always @(posedge clk) begin
 		ns = cs;
 		case(cs)
 			IDLE: begin
@@ -73,8 +77,10 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 	end
 	
 	//data
-	always_comb @(*) begin
-		
+	always @(*) begin
+		pushout_d = pushout;
+		dout_d = dout;
+		firstout_d = firstout;
 		case(cs)
 			IDLE: begin
 				$display("\nIDLE\n, %t", $time);
@@ -119,9 +125,9 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 	end
 	
 	//rdy
-	always_ff @(posedge pushin) begin
+	always_ff @(posedge clk) begin
 		//write_rdy_d = #1 write_rdy;
-		if(!stopin) begin
+		if(pushin && !stopin) begin
 			write_rdy_d <= #1 1;
 		end else begin
 			write_rdy_d <= #1 0;
@@ -129,7 +135,7 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 	end
 	
 	//cs, ns
-	always_ff @(posedge clk or poesdge rst) begin
+	always_ff @(posedge clk or posedge rst) begin
 		if(rst) begin
 			cs <=#1 0;
 		end else begin
@@ -138,17 +144,23 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 	end
 	
 	//ds
-	always_ff @(posedge clk or poesdge rst) begin
+	always_ff @(posedge clk or posedge rst) begin
 		if(rst) begin
 			x <= #1 0;
 			y <= #1 0;
 			stopin <= #1 0;
 			write_rdy <= #1 0;
+			pushout <= #1 0;
+			firstout <= #1 0;
+			dout <= #1 0;
 		end else begin
 			x <= #1 cx;
 			y <= #1 cy;
 			stopin <= #1 stopin_d;
 			write_rdy <= #1 write_rdy_d;
+			pushout <= #1 pushout_d;
+			firstout <= #1 firstout_d;
+			dout <= #1 dout_d;
 		end
 	end
 	
