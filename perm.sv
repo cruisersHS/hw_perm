@@ -108,7 +108,7 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 			end
 			
 			THETA_2: begin		//stored in m2(y=0)
-				if(cx == 4) begin
+				if(x == 4) begin
 					$display("\nFINISHED THETA_2 %t\n", $time);
 					ns = THETA_3;
 				end else begin
@@ -190,10 +190,17 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 			end
 			
 			THETA_2: begin
-				m2wy = 1;
-				m2wx = x;
-				m2wd = temp_c;
-				m2wr = 1;
+				if(!buffer) begin
+					m2wy = 1;
+					m2wx = x;
+					m2wd = 0;
+					m2wr = 0;
+				end else begin
+					m2wy = 1;
+					m2wx = x;
+					m2wd = temp_c;
+					m2wr = 1;
+				end
 			end
 			
 			default: begin
@@ -277,7 +284,7 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 			
 			THETA_2: begin
 				cy = 0;
-				if(cx <= 4) begin
+				if(buffer) begin
 					cx = x + 1;
 				end
 			end
@@ -293,10 +300,10 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 	always_ff @(posedge clk or posedge rst) begin
 		if(!rst) begin
 			case(cs)
-				/* THETA_2: begin
+				THETA_2: begin
 					if(buffer == 0) buffer <= #1 1;
 					else buffer <= #1 0;
-				end */
+				end
 				
 				default: buffer <= #1 0;
 			endcase
@@ -317,9 +324,9 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 				end
 				
 				THETA_2: begin
-					if(cx <= 4) begin
+					if(buffer) begin
 						temp_c <= #1 (m2rd ^ `sub64(m3rd));
-						$display("temp_c calc: m2rd:%h, m3rd:%h, tempc:%h, %t", m2rd, m3rd, temp_c, $time);
+						$monitor("temp_c calc:x%dy%dwr%d m2rd:%h, m3rd:%h, tempc:%h, %t", x, y, m2wr, m2rd, m3rd, temp_c, $time);
 					end
 				end
 				
