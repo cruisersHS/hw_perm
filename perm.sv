@@ -36,7 +36,6 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 	enum [3:0] {
 	IDLE,
 	INPUT_D,
-	INPUT_BUFFER,
 	THETA_1,
 	THETA_2,
 	THETA_3,
@@ -49,7 +48,6 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 	reg write_rdy, write_rdy_d;		//write ready
 	
 	reg [63:0] temp_c, temp_c_acc;
-	reg [63:0] temp_d;
 	
 	//pushin: data input to m1
 	//stopin: x4y4 stop input
@@ -93,14 +91,10 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 			
 			INPUT_D: begin
 				if(cx == 4 && cy == 4) begin
-					ns = INPUT_BUFFER;
+					ns = THETA_1;
 				end else begin
 					ns = INPUT_D;
 				end
-			end
-			
-			INPUT_BUFFER: begin		//for last input
-				ns = THETA_1;
 			end
 			
 			THETA_1: begin
@@ -113,15 +107,6 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 			end
 			
 			THETA_2: begin		//stored in m2(y=0)
-				if(cx == 4) begin
-					ns = THETA_3;
-				end else begin
-					ns = THETA_2;
-				end
-			end
-			
-			THETA_3: begin
-				$display("\nFINISHED THETA_2 %t\n", $time);
 				$finish;
 			end
 			
@@ -153,14 +138,6 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 			end
 			INPUT_D: begin
 				$display("INPUT,x%dy%d,din=%h, %t", x, y, din, $time);
-				m1wx = x;
-				m1wy = y;
-				m1wr = 1;
-				m1wd = din;
-			end
-			
-			INPUT_BUFFER: begin
-				$display("INPUT BUFFER,x%dy%d,din=%h, %t", x, y, din, $time);
 				m1wx = x;
 				m1wy = y;
 				m1wr = 1;
