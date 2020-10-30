@@ -65,7 +65,7 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 			INPUT: begin
 				if(cx == 4 && cy == 4) begin
 					//ns = THETA_1
-					#50 $finish;
+					$finish;
 				end else begin
 					ns = INPUT;
 				end
@@ -87,10 +87,18 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 	//data in m1 write
 	always @(*) begin
 		case(cs)
+			IDLE: begin
+				if(pushin && firstin) begin
+					m1wx = x;
+					m1wy = y;
+					m1wr = 1;
+					m1wd = din;
+				end
+			end
 			INPUT: begin
 				$display("INPUT,x%dy%d,din=%h, %t", x, y, din, $time);
-				m1wx = cx;
-				m1wy = cy;
+				m1wx = x;
+				m1wy = y;
 				m1wr = 1;
 				m1wd = din;
 			end
@@ -109,7 +117,12 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 		cx = x;
 		cy = y;
 		case(cs)
-			
+			IDLE: begin
+				if(pushin) begin
+					cy = y + 1;
+				end
+			end
+
 			INPUT: begin
 				//$display("cx = %d, cy = %d, %t", cx, cy, $time);
 				if(cx >= 4 && cy >= 4) begin
