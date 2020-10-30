@@ -35,7 +35,7 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 	
 	enum [3:0] {
 	IDLE,
-	INPUT,
+	INPUT_D,
 	THETA_1,
 	THETA_2,
 	THETA_3,
@@ -47,8 +47,23 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 	reg [2:0] x, y, cx, cy;
 	reg write_rdy, write_rdy_d;		//write ready
 	
+	reg [63:0] temp_c, temp_c_acc;
+	
 	//pushin: data input to m1
 	//stopin: x4y4 stop input
+	
+	//update cx, cy 5 by 5
+	task cxy55;
+		if(cx >= 4 && cy >= 4) begin
+			cx = 0;
+			cy = 0;
+		end else if (cy >= 4) begin
+			cx = x + 1;
+			cy = 0;
+		end else begin
+			cy = y + 1;
+		end
+	endtask
 	
 	//state logic
 	always @(posedge clk) begin
@@ -62,12 +77,20 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 				end
 			end
 			
-			INPUT: begin
+			INPUT_D: begin
 				if(cx == 4 && cy == 4) begin
-					//ns = THETA_1
-					$finish;
+					ns = THETA_1;
 				end else begin
 					ns = INPUT;
+				end
+			end
+			
+			THETA_1: begin
+				if(cx == 4 && cy == 4) begin
+					$display("\nfinished THETA_1 %t\n", $time);
+					$finish;
+				end else begin
+					ns = THETA_1;
 				end
 			end
 			
@@ -88,14 +111,15 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 	always @(*) begin
 		case(cs)
 			IDLE: begin
-				if(pushin && firstin) begin
+				if(pushin) begin
+					$display("INPUT(pushin),x%dy%d,din=%h, %t", x, y, din, $time);
 					m1wx = x;
 					m1wy = y;
 					m1wr = 1;
 					m1wd = din;
 				end
 			end
-			INPUT: begin
+			INPUT_D: begin
 				$display("INPUT,x%dy%d,din=%h, %t", x, y, din, $time);
 				m1wx = x;
 				m1wy = y;
@@ -112,7 +136,42 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 		endcase
 	end
 	
-	//cx, cy
+	//m1, read
+	always @(*) begin
+		case(cs)
+			THETA_1: begin
+				m1rx = x;
+				m1ry = y;
+			end
+			
+			default: begin
+				m1rx = 0;
+				m1ry = 0;
+			end
+		endcase
+	end
+	
+	//m2, write
+	always @(*) begin
+		case(cs)
+			THETA_1: begin
+				m2wx = x;
+				m2wy = 0;
+				m2wd = temp_c_acc;
+				m2wr = 1;
+				$display("THETA_1, m2wd(%d) = %h, %t", m2wx, m2wd, $time);
+			end
+			
+			default: begin
+				m2wx = 0;
+				m2wy = 0;
+				m2wd = 0;
+				m2wr = 0;
+			end
+		endcase
+	end
+	
+	//cx, cy, always use x, y for assignment
 	always @(posedge clk) begin
 		cx = x;
 		cy = y;
@@ -123,17 +182,13 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 				end
 			end
 
-			INPUT: begin
+			INPUT_D: begin			//5x5
 				//$display("cx = %d, cy = %d, %t", cx, cy, $time);
-				if(cx >= 4 && cy >= 4) begin
-					cx = 0;
-					cy = 0;
-				end else if (cy >= 4) begin
-					cx = x + 1;
-					cy = 0;
-				end else begin
-					cy = y + 1;
-				end
+				cxy55();
+			end
+			
+			THETA_1: begin			//5x5
+				cxy55();
 			end
 			
 			default: begin
@@ -141,6 +196,32 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 				cy = 0;
 			end
 		endcase
+	end
+	
+	//temp_c
+	always_ff @(posedge clk or posedge rst) begin
+		if(!rst) begin
+			case(cs)
+				THETA_1: begin
+					if(cy == 0) temp_c <= #1 m1rd;
+					else if (cy <= 4) temp_c <= #1 temp_c ^ m1rd;
+					else temp_c <= #1 0;
+				end
+				
+				default: temp_c <= #1 0;
+			endcase
+		end else begin
+			temp_c <= #1 0;
+		end
+	end
+	
+	//temp_c_acc
+	always_ff @(posedge clk or posedge rst) begin
+		if(!rst) begin
+			temp_c_acc <= #1 m1rd ^ temp_c;
+		end else begin
+			temp_c_acc <= #1 0;
+		end
 	end
 	
 	//rdy
@@ -160,9 +241,23 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 	//cs, ns, rst
 	always_ff @(posedge clk or posedge rst) begin
 		if(rst) begin
-			cs <=#1 0;
+			cs <=#1 IDLE;
 		end else begin
 			cs <=#1 ns;
+		end
+	end
+	
+	//stopin
+	always_ff @(posedge clk or posedge rst) begin
+		if(!rst) begin
+			if(cx == 4 && cy == 4) begin
+				stopin <= #1 1;
+			end else begin
+				if(cs == INPUT_D) stopin <= #1 0;
+				else stopin <= #1 1;
+			end
+		end else begin
+			stopin <= #1 0;
 		end
 	end
 	
@@ -171,14 +266,12 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 		if(rst) begin
 			x <= #1 0;
 			y <= #1 0;
-			stopin <= #1 0;
 			pushout <= #1 0;
 			firstout <= #1 0;
 			dout <= #1 0;
 		end else begin
 			x <= #1 cx;
 			y <= #1 cy;
-			stopin <= #1 stopin_d;
 			pushout <= #1 pushout_d;
 			firstout <= #1 firstout_d;
 			dout <= #1 dout_d;
