@@ -143,7 +143,7 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 			end
 			
 			CHI: begin
-				if(x == 4 && y == 4 && buffer == 2) begin
+				if(x == 4 && y == 4 && buffer == 3) begin
 					$display("\nFINISHED CHI %t\n", $time);
 					ns = IOTA;
 				end else begin
@@ -301,79 +301,79 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 					
 					8'h02: begin
 						m2wx = 2;
-						m2wy = 2;
+						m2wy = 1;
 						m2wd = `sub64_n(m3rd, 3);
 					end
 					8'h12: begin
 						m2wx = 2;
-						m2wy = 4;
+						m2wy = 3;
 						m2wd = `sub64_n(m3rd, 10);
 					end
 					8'h22: begin
 						m2wx = 2;
-						m2wy = 1;
+						m2wy = 0;
 						m2wd = `sub64_n(m3rd, 43);
 					end
 					8'h32: begin
 						m2wx = 2;
-						m2wy = 3;
+						m2wy = 2;
 						m2wd = `sub64_n(m3rd, 25);
 					end
 					8'h42: begin
 						m2wx = 2;
-						m2wy = 0;
+						m2wy = 4;
 						m2wd = `sub64_n(m3rd, 39);
 					end
 					
 					8'h03: begin
 						m2wx = 3;
-						m2wy = 0;
+						m2wy = 4;
 						m2wd = `sub64_n(m3rd, 41);
 					end
 					8'h13: begin
 						m2wx = 3;
-						m2wy = 2;
+						m2wy = 1;
 						m2wd = `sub64_n(m3rd, 45);
 					end
 					8'h23: begin
 						m2wx = 3;
-						m2wy = 4;
+						m2wy = 3;
 						m2wd = `sub64_n(m3rd, 15);
 					end
 					8'h33: begin
 						m2wx = 3;
-						m2wy = 1;
+						m2wy = 0;
 						m2wd = `sub64_n(m3rd, 21);
 					end
 					8'h43: begin
 						m2wx = 3;
-						m2wy = 3;
+						m2wy = 2;
 						m2wd = `sub64_n(m3rd, 8);
 					end
 					
 					8'h04: begin
 						m2wx = 4;
-						m2wy = 3;
+						m2wy = 2;
 						m2wd = `sub64_n(m3rd, 18);
 					end
 					8'h14: begin
 						m2wx = 4;
-						m2wy = 0;
+						m2wy = 4;
 						m2wd = `sub64_n(m3rd, 2);
 					end
 					8'h24: begin
 						m2wx = 4;
-						m2wy = 2;
+						m2wy = 1;
 						m2wd = `sub64_n(m3rd, 61);
 					end
 					8'h34: begin
 						m2wx = 4;
-						m2wy = 4;
+						m2wy = 3;
 						m2wd = `sub64_n(m3rd, 56);
 					end
 					8'h44: begin
 						m2wx = 4;
-						m2wy = 1;
+						m2wy = 0;
 						m2wd = `sub64_n(m3rd, 14);
 					end
 					
@@ -413,6 +413,7 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 					0: m2rx = `add_1(x);
 					1: m2rx = `add_2(x);
 					2: m2rx = x;
+					3: m2rx = x;
 					default: begin
 						m2rx = 0;
 					end
@@ -447,6 +448,7 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 				m3wx = x;
 				m3wy = y;
 				m3wr = 1;
+				m3wd = temp_c2;
 			end
 			
 			default: begin
@@ -517,7 +519,7 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 			end
 			
 			CHI: begin		//x then y
-				if(buffer == 2) cyx55();
+				if(buffer == 3) cyx55();
 				else begin
 					cx = x;
 					cy = y;
@@ -564,7 +566,8 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 					case(buffer)
 						0: buffer <= #1 1;
 						1: buffer <= #1 2;
-						2: buffer <= #1 0;
+						2: buffer <= #1 3;
+						3: buffer <= #1 0;
 						default: buffer <= #1 0;
 					endcase
 				end
