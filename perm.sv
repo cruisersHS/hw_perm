@@ -40,8 +40,7 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 	THETA_2,
 	BUFFER,
 	THETA_3,
-	RHO,
-	PI,
+	RHO_PI,
 	CHI
 	} cs, ns;
 	
@@ -55,7 +54,7 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 	//pushin: data input to m1
 	//stopin: x4y4 stop input
 	
-	//update cx, cy 5 by 5
+	//update cx, cy 5 by 5, y0-5 then x+1
 	task cxy55;
 		if(cx >= 4 && cy >= 4) begin
 			cx = 0;
@@ -67,7 +66,8 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 			cy = y + 1;
 		end
 	endtask
-
+	
+	//update cx, cy 5 by 5, x0-5 then y+1
 	task cyx55;
 		if(cx >= 4 && cy >= 4) begin
 			cx = 0;
@@ -126,13 +126,22 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 			THETA_3: begin
 				if(x == 4 && y == 4) begin
 					$display("\nFINISHED THETA_3 %t\n", $time);
-					ns = RHO;
+					ns = RHO_PI;
 				end else begin
 					ns = THETA_3;
 				end
 			end
 			
-			RHO: begin
+			RHO_PI: begin
+				if(x == 4 && y == 4) begin
+					$display("\nFINISHED RHO_PI %t\n", $time);
+					ns = CHI;
+				end else begin
+					ns = RHO_PI;
+				end
+			end
+			
+			CHI: begin
 				#20 $finish;
 			end
 			
@@ -223,6 +232,149 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 				end
 			end
 			
+			RHO_PI: begin
+				m2wr = 1;
+				
+				//m2wy
+				case({1'b0,x,1'b0,y})
+					8'h00: begin
+						m2wx = 0;
+						m2wy = 0;
+						m2wd = m3rd;
+					end
+					8'h10: begin
+						m2wx = 0;
+						m2wy = 2;
+						m2wd = `sub64(m3rd);
+					end
+					8'h20: begin
+						m2wx = 0;
+						m2wy = 4;
+						m2wd = `sub64_n(m3rd, 62);
+					end
+					8'h30: begin
+						m2wx = 0;
+						m2wy = 1;
+						m2wd = `sub64_n(m3rd, 28);
+					end
+					8'h40: begin
+						m2wx = 0;
+						m2wy = 3;
+						m2wd = `sub64_n(m3rd, 27);
+					end
+					
+					8'h01: begin
+						m2wx = 1;
+						m2wy = 3;
+						m2wd = `sub64_n(m3rd, 36);
+					end
+					8'h11: begin
+						m2wx = 1;
+						m2wy = 0;
+						m2wd = `sub64_n(m3rd, 44);
+					end
+					8'h21: begin
+						m2wx = 1;
+						m2wy = 2;
+						m2wd = `sub64_n(m3rd, 6);
+					end
+					8'h31: begin
+						m2wx = 1;
+						m2wy = 4;
+						m2wd = `sub64_n(m3rd, 55);
+					end
+					8'h41: begin
+						m2wx = 1;
+						m2wy = 1;
+						m2wd = `sub64_n(m3rd, 20);
+					end
+					
+					8'h02: begin
+						m2wx = 2;
+						m2wy = 2;
+						m2wd = `sub64_n(m3rd, 3);
+					end
+					8'h12: begin
+						m2wx = 2;
+						m2wy = 4;
+						m2wd = `sub64_n(m3rd, 10);
+					end
+					8'h22: begin
+						m2wx = 2;
+						m2wy = 1;
+						m2wd = `sub64_n(m3rd, 43);
+					end
+					8'h32: begin
+						m2wx = 2;
+						m2wy = 3;
+						m2wd = `sub64_n(m3rd, 25);
+					end
+					8'h42: begin
+						m2wx = 2;
+						m2wy = 0;
+						m2wd = `sub64_n(m3rd, 39);
+					end
+					
+					8'h03: begin
+						m2wx = 3;
+						m2wy = 0;
+						m2wd = `sub64_n(m3rd, 41);
+					end
+					8'h13: begin
+						m2wx = 3;
+						m2wy = 2;
+						m2wd = `sub64_n(m3rd, 45);
+					end
+					8'h23: begin
+						m2wx = 3;
+						m2wy = 4;
+						m2wd = `sub64_n(m3rd, 15);
+					end
+					8'h33: begin
+						m2wx = 3;
+						m2wy = 1;
+						m2wd = `sub64_n(m3rd, 21);
+					end
+					8'h43: begin
+						m2wx = 3;
+						m2wy = 3;
+						m2wd = `sub64_n(m3rd, 8);
+					end
+					
+					8'h04: begin
+						m2wx = 4;
+						m2wy = 3;
+						m2wd = `sub64_n(m3rd, 18);
+					end
+					8'h14: begin
+						m2wx = 4;
+						m2wy = 0;
+						m2wd = `sub64_n(m3rd, 2);
+					end
+					8'h24: begin
+						m2wx = 4;
+						m2wy = 2;
+						m2wd = `sub64_n(m3rd, 61);
+					end
+					8'h34: begin
+						m2wx = 4;
+						m2wy = 4;
+						m2wd = `sub64_n(m3rd, 56);
+					end
+					8'h44: begin
+						m2wx = 4;
+						m2wy = 1;
+						m2wd = `sub64_n(m3rd, 14);
+					end
+					
+					default: begin
+						m2wx = 0;
+						m2wy = 0;
+						m2wd = 0;
+					end
+				endcase
+			end
+			
 			default: begin
 				m2wx = 0;
 				m2wy = 0;
@@ -286,6 +438,11 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 				m3ry = 0;
 			end
 			
+			RHO_PI: begin
+				m3rx = x;
+				m3ry = y;
+			end
+			
 			default: begin
 				m3rx = 0;
 				m3ry = 0;
@@ -327,6 +484,10 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 				cxy55();
 			end
 			
+			RHO_PI: begin
+				cyx55();
+			end
+			
 			default: begin
 				cx = 0;
 				cy = 0;
@@ -352,8 +513,6 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 				default: buffer1 <= #1 0;
 			endcase
 		end
-
-
 	end
 
 	//buffer (not now)
@@ -435,13 +594,6 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 		if(!rst) begin
 			if(cs == INPUT_D && (cx == 4 && cy == 4)) stopin <= #1 0;
 			else if(pushin && (x == 4 && y == 4)) stopin <= #1 1;
-
-			/*if(cx == 4 && cy == 4) begin
-				stopin <= #1 1;
-			end else begin
-				if(cs == INPUT_D || cs == IDLE) stopin <= #1 0;
-				else stopin <= #1 1;
-			end*/
 		end else begin
 			stopin <= #1 0;
 		end
