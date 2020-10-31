@@ -43,6 +43,7 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 	RHO_PI,
 	CHI,
 	IOTA,
+	RND_END,
 	OUT_D
 	} cs, ns;
 	
@@ -154,7 +155,19 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 			end
 			
 			IOTA: begin
-				ns = OUT_D;
+				ns = RND_END;
+			end
+			
+			RND_END: begin		//m3 -> m1 -> out(when rnd24), cyx
+				if(x == 4 && y == 4 && rnd < 23) begin
+					$display("\nFINISHED RND%d %t\n", rnd, $time);
+					ns = THETA_1;
+				end else if (x == 4 && y == 4 && rnd == 1) begin
+					$display("\nFINISHED  ALL RND %t\n", $time);
+					ns = OUT_D;
+				end else begin
+					ns = RND_END;
+				end
 			end
 			
 			OUT_D: begin
@@ -175,7 +188,7 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 		stopin_d = stopin;
 	end
 	
-	//data in m1 write
+	//m1 write
 	always @(*) begin
 		case(cs)
 			IDLE: begin
@@ -198,6 +211,13 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 				m1wy = y;
 				m1wr = 1;
 				m1wd = din;
+			end
+			
+			RND_END: begin
+				m1wx = x;
+				m1wy = y;
+				m1wr = 1;
+				m1wd = m3rd;
 			end
 			
 			default: begin
@@ -517,6 +537,11 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 				m3ry = y;
 			end
 			
+			RND_END: begin
+				m3rx = x;
+				m3ry = y;
+			end
+			
 			default: begin
 				m3rx = 0;
 				m3ry = 0;
@@ -570,6 +595,10 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 				end
 			end
 			
+			RND_END: begin
+				cyx55();
+			end
+			
 			default: begin
 				cx = 0;
 				cy = 0;
@@ -582,7 +611,12 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 		if(rst) begin
 			rnd <= #1 0;
 		end else begin
-			rnd <= #1 0;////////////////////////////////////////
+			if(cs == RND_END && x == 4 && y == 4) begin
+				if(rnd < 1) rnd <= #1 rnd + 1;				////////////////
+				else rnd <= #1 0;
+			end else begin
+				rnd <= #1 rnd;
+			end
 		end
 	end
 	
