@@ -118,6 +118,15 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 			end
 			
 			THETA_3: begin
+				if(cx == 4 && cy == 4) begin
+					$display("\nFINISHED THETA_3 %t\n", $time);
+					ns = RHO;
+				end else begin
+					ns = THETA_3;
+				end
+			end
+			
+			RHO: begin
 				#20 $finish;
 			end
 			
@@ -172,6 +181,11 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 				m1ry = y;
 			end
 			
+			THETA_3: begin
+				m1rx = x;
+				m1ry = y;
+			end
+			
 			default: begin
 				m1rx = 0;
 				m1ry = 0;
@@ -220,6 +234,11 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 				m2ry = 0;
 			end
 			
+			THETA_3: begin
+				m2rx = x;
+				m2ry = 1;
+			end
+			
 			default: begin
 				m2rx = 0;
 				m2ry = 0;
@@ -234,6 +253,13 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 				m3wx = x;
 				m3wy = 0;
 				m3wd = temp_c_acc;
+				m3wr = 1;
+			end
+			
+			THETA_3: begin
+				m3wx = x;
+				m3wy = y;
+				m3wd = m1rd ^ m2rd;
 				m3wr = 1;
 			end
 			
@@ -289,6 +315,10 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 				end else if (x == 4) begin
 					if(y == 4) cx = 0;
 				end
+			end
+			
+			THETA_3: begin
+				cxy55();
 			end
 			
 			default: begin
