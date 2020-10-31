@@ -154,7 +154,7 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 			end
 			
 			IOTA: begin
-				#10 ns = OUT_D;
+				ns = OUT_D;
 			end
 			
 			OUT_D: begin
