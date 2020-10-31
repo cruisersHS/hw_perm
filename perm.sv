@@ -124,7 +124,7 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 			end
 			
 			THETA_3: begin
-				if(cx == 4 && cy == 4) begin
+				if(x == 4 && y == 4) begin
 					$display("\nFINISHED THETA_3 %t\n", $time);
 					ns = RHO;
 				end else begin
