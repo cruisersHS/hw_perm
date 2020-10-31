@@ -174,7 +174,11 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 			end
 			
 			OUT_D: begin
-				#20 $finish;
+				if(x == 4 && y == 4) begin
+					ns = IDLE;
+				end else begin
+					ns = OUT_D;
+				end
 			end
 			
 			default: begin
@@ -183,13 +187,6 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 		endcase
 	end
 	
-	//_d
-	always @(*) begin
-		pushout_d = pushout;
-		dout_d = dout;
-		firstout_d = firstout;
-		stopin_d = stopin;
-	end
 	
 	//m1 write
 	always @(*) begin
@@ -241,6 +238,11 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 			end
 			
 			THETA_3: begin
+				m1rx = x;
+				m1ry = y;
+			end
+			
+			OUT_D: begin
 				m1rx = x;
 				m1ry = y;
 			end
@@ -609,11 +611,47 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 				cyx55();
 			end
 			
+			OUT_D: begin
+				if(stopout) begin
+					cx = x;
+					cy = y;
+				end else cyx55();
+			end
+			
 			default: begin
 				cx = 0;
 				cy = 0;
 			end
 		endcase
+	end
+	
+	//dout
+	always_ff @(posedge clk or posedge rst) begin
+		if(rst) dout <= #1 0;
+		else begin
+			if(cs == OUT_D && !stopout) begin
+				dout <= #1 m1rd;
+				$display("DOUTx%dy%d = %h, %t", x, y, m1rd, $time);
+			end else dout <= #1 0;
+		end
+	end
+	
+	//firstout
+	always_ff @(posedge clk or posedge rst) begin
+		if(rst) firstout <= #1 0;
+		else begin
+			if(cs == OUT_D && cx == 0 && cy == 0 && !stopout) firstout <= #1 1;
+			else firstout <= #1 0;
+		end
+	end
+	
+	//pushout
+	always_ff @(posedge clk or posedge rst) begin
+		if(rst) pushout <= #1 0;
+		else begin
+			if(cs == OUT_D && !stopout) pushout <= #1 1;
+			else pushout <= #1 0;
+		end
 	end
 	
 	//rnd
@@ -622,7 +660,7 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 			rnd <= #1 0;
 		end else begin
 			if(cs == RND_END && x == 4 && y == 4) begin
-				if(rnd < 23) rnd <= #1 rnd + 1;				////////////////
+				if(rnd < 23) rnd <= #1 rnd + 1;
 				else rnd <= #1 0;
 			end else begin
 				rnd <= #1 rnd;
@@ -652,7 +690,9 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 
 	//buffer (not now)
 	always_ff @(posedge clk or posedge rst) begin
-		if(!rst) begin
+		if(rst) begin
+			buffer <= #1 0;
+		end else begin
 			case(cs)
 				THETA_1: begin
 					if(y == 4) buffer <= #1 1;
@@ -676,7 +716,7 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 				
 				default: buffer <= #1 0;
 			endcase
-		end else buffer <= #1 0;
+		end
 	end
 	
 	//temp_c2
@@ -702,52 +742,50 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 	
 	//temp_c
 	always_ff @(posedge clk or posedge rst) begin
-		if(!rst) begin
+		if(rst) begin
+			temp_c <= #1 0;
+		end else begin
 			case(cs)
 				THETA_1: begin
 					if(y == 0) temp_c <= #1 m1rd;
 					else if (y < 4 || (y == 4 && buffer == 0)) temp_c <= #1 temp_c ^ m1rd;
 					else begin 
-						$display("x%dy%d, temp_c%h, rd%h, acc%h,", x, y, temp_c, m1rd, temp_c_acc);
+						//$display("x%dy%d, temp_c%h, rd%h, acc%h,", x, y, temp_c, m1rd, temp_c_acc);
 						temp_c <= #1 0;
 					end
 				end
-				
 				THETA_2: begin
 					if(buffer == 1 && y == 0) begin
 						temp_c <= #1 (m2rd ^ `sub64(m3rd));
-						$monitor("temp_c calc:x%dy%dwr%d m2rd:%h, m3rd:%h, tempc:%h, %t", x, y, m2wr, m2rd, m3rd, temp_c, $time);
+						//$monitor("temp_c calc:x%dy%dwr%d m2rd:%h, m3rd:%h, tempc:%h, %t", x, y, m2wr, m2rd, m3rd, temp_c, $time);
 					end
 				end
-				
 				default: temp_c <= #1 0;
 			endcase
-		end else begin
-			temp_c <= #1 0;
 		end
 	end
 	
 	//temp_c_acc
 	always_ff @(posedge clk or posedge rst) begin
-		if(!rst) begin
+		if(rst) begin
+			temp_c_acc <= #1 0;
+		end else begin
 			if (y < 4 || (y == 4 && buffer == 0)) temp_c_acc <= #1 m1rd ^ temp_c;
 			else temp_c_acc <= #1 0;
-		end else begin
-			temp_c_acc <= #1 0;
 		end
 	end
 	
 	//rdy
 	always_ff @(posedge clk or posedge rst) begin
-		if(!rst) begin
+		if(rst) begin
+			write_rdy <= #1 0;
+		end else begin
 			if(pushin && !stopin) begin
 				$display("pushin received!! push data is %h %t", din, $time);
 				write_rdy <= #1 1;
 			end else begin
 				write_rdy <= #1 0;
 			end
-		end else begin
-			write_rdy <= #1 0;
 		end
 	end
 	
@@ -762,9 +800,9 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 	
 	//stopin, change all !rst to rst
 	always_ff @(posedge clk or posedge rst) begin
-		if(!rst) begin
-			//if(cs == INPUT_D && (cx == 4 && cy == 4)) stopin <= #1 0;
-			//else if(pushin && (cx == 4 && cy == 4)) stopin <= #1 1;
+		if(rst) begin
+			stopin <= #1 0;
+		end else begin
 			case(cs)
 				IDLE: stopin <= #1 0;
 				INPUT_D: begin
@@ -772,12 +810,8 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 					else if(stopin) stopin <= #1 1;
 					else stopin <= #1 0;
 				end
-
 				default: stopin <= #1 1;
 			endcase
-			
-		end else begin
-			stopin <= #1 0;
 		end
 	end
 	
@@ -786,15 +820,9 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 		if(rst) begin
 			x <= #1 0;
 			y <= #1 0;
-			pushout <= #1 0;
-			firstout <= #1 0;
-			dout <= #1 0;
 		end else begin
 			x <= #1 cx;
 			y <= #1 cy;
-			pushout <= #1 pushout_d;
-			firstout <= #1 firstout_d;
-			dout <= #1 dout_d;
 		end
 	end
 	
