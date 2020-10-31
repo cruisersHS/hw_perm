@@ -38,6 +38,7 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 	INPUT_D,
 	THETA_1,
 	THETA_2,
+	BUFFER,
 	THETA_3,
 	RHO,
 	PI,
@@ -111,10 +112,15 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 			THETA_2: begin		//stored in m2(y=0)
 				if(x == 4 && y == 0 && !buffer1) begin
 					$display("\nFINISHED THETA_2 %t\n", $time);
-					ns = THETA_3;
+					ns = BUFFER;
 				end else begin
 					ns = THETA_2;
 				end
+			end
+			
+			BUFFER: begin
+				$display("\nBUFFER%t\n", $time);
+				ns = THETA_3;
 			end
 			
 			THETA_3: begin
