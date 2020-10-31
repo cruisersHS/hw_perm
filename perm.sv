@@ -50,7 +50,7 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 	reg [1:0] buffer;
 	reg buffer1;
 	
-	reg [63:0] temp_c, temp_c_acc;
+	reg [63:0] temp_c, temp_c_acc, temp_c2;
 	
 	//pushin: data input to m1
 	//stopin: x4y4 stop input
@@ -143,13 +143,16 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 			end
 			
 			CHI: begin
-				#20 $finish;
-				if(x == 4 && y == 4) begin
+				if(x == 4 && y == 4 && buffer == 2) begin
 					$display("\nFINISHED CHI %t\n", $time);
 					ns = IOTA;
 				end else begin
 					ns = CHI;
 				end
+			end
+			
+			IOTA: begin
+				#20 $finish;
 			end
 			
 			default: begin
@@ -404,6 +407,18 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 				m2ry = 1;
 			end
 			
+			CHI: begin
+				m2ry = y;
+				case(buffer)
+					0: m2rx = `add_1(x);
+					1: m2rx = `add_2(x);
+					2: m2rx = x;
+					default: begin
+						m2rx = 0;
+					end
+				endcase
+			end
+			
 			default: begin
 				m2rx = 0;
 				m2ry = 0;
@@ -425,6 +440,12 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 				m3wx = x;
 				m3wy = y;
 				m3wd = m1rd ^ m2rd;
+				m3wr = 1;
+			end
+			
+			CHI: begin
+				m3wx = x;
+				m3wy = y;
 				m3wr = 1;
 			end
 			
@@ -495,6 +516,14 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 				cyx55();
 			end
 			
+			CHI: begin		//x then y
+				if(buffer == 2) cyx55();
+				else begin
+					cx = x;
+					cy = y;
+				end
+			end
+			
 			default: begin
 				cx = 0;
 				cy = 0;
@@ -531,9 +560,39 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 					else buffer <= #1 0;
 				end
 				
+				CHI: begin
+					case(buffer)
+						0: buffer <= #1 1;
+						1: buffer <= #1 2;
+						2: buffer <= #1 0;
+						default: buffer <= #1 0;
+					endcase
+				end
+				
 				default: buffer <= #1 0;
 			endcase
 		end else buffer <= #1 0;
+	end
+	
+	//temp_c2
+	always_ff @(posedge clk or posedge rst) begin
+		if(rst) begin
+			temp_c2 <= #1 0;
+		end else begin
+			case(cs)
+				CHI: begin
+					case(buffer)
+						0: temp_c2 <= #1 m2rd ^ 64'hffffffffffffffff;
+						1: temp_c2 <= #1 temp_c2 & m2rd;
+						2: temp_c2 <= #1 temp_c2 ^ m2rd;
+						default: temp_c2 <= #1 0;
+					endcase
+				end
+				
+				
+				default: temp_c2 <= #1 0;
+			endcase
+		end
 	end
 	
 	//temp_c
