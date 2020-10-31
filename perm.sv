@@ -41,7 +41,8 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 	BUFFER,
 	THETA_3,
 	RHO_PI,
-	CHI
+	CHI,
+	IOTA
 	} cs, ns;
 	
 	reg [2:0] x, y, cx, cy;
@@ -93,7 +94,7 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 			end
 			
 			INPUT_D: begin
-				if(cx == 4 && cy == 4) begin
+				if(x == 4 && y == 4) begin
 					ns = THETA_1;
 				end else begin
 					ns = INPUT_D;
@@ -101,7 +102,7 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 			end
 			
 			THETA_1: begin
-				if(cx == 4 && cy == 4) begin
+				if(x == 4 && y == 4) begin
 					$display("\nFINISHED THETA_1 %t\n", $time);
 					ns = THETA_2;
 				end else begin
@@ -143,6 +144,12 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 			
 			CHI: begin
 				#20 $finish;
+				if(x == 4 && y == 4) begin
+					$display("\nFINISHED CHI %t\n", $time);
+					ns = IOTA;
+				end else begin
+					ns = CHI;
+				end
 			end
 			
 			default: begin
