@@ -179,6 +179,11 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 					m1wy = y;
 					m1wr = 1;
 					m1wd = din;
+				end else begin
+					m1wx = 0;
+					m1wy = 0;
+					m1wr = 0;
+					m1wd = 0;
 				end
 			end
 			INPUT_D: begin
