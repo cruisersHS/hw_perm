@@ -42,13 +42,15 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 	THETA_3,
 	RHO_PI,
 	CHI,
-	IOTA
+	IOTA,
+	OUT_D
 	} cs, ns;
 	
 	reg [2:0] x, y, cx, cy;
 	reg write_rdy, write_rdy_d;		//write ready
 	reg [1:0] buffer;
 	reg buffer1;
+	reg [4:0] rnd;		//round 0 to 23
 	
 	reg [63:0] temp_c, temp_c_acc, temp_c2;
 	
@@ -152,6 +154,10 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 			end
 			
 			IOTA: begin
+				#10 ns = OUT_D;
+			end
+			
+			OUT_D: begin
 				#20 $finish;
 			end
 			
@@ -456,6 +462,39 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 				m3wd = temp_c2;
 			end
 			
+			IOTA: begin
+				m3wx = 0;
+				m3wy = 0;
+				m3wr = 1;
+				case(rnd)
+					0: m3wd = m3rd ^ 64'h0000000000000001;
+                    1: m3wd = m3rd ^ 64'h0000000000008082;
+                    2: m3wd = m3rd ^ 64'h800000000000808a;
+                    3: m3wd = m3rd ^ 64'h8000000080008000;
+                    4: m3wd = m3rd ^ 64'h000000000000808b;
+                    5: m3wd = m3rd ^ 64'h0000000080000001;
+                    6: m3wd = m3rd ^ 64'h8000000080008081;
+                    7: m3wd = m3rd ^ 64'h8000000000008009;
+                    8: m3wd = m3rd ^ 64'h000000000000008a;
+                    9: m3wd = m3rd ^ 64'h0000000000000088;
+                    10: m3wd = m3rd ^ 64'h0000000080008009;
+                    11: m3wd = m3rd ^ 64'h000000008000000a;
+                    12: m3wd = m3rd ^ 64'h000000008000808b;
+                    13: m3wd = m3rd ^ 64'h800000000000008b;
+                    14: m3wd = m3rd ^ 64'h8000000000008089;
+                    15: m3wd = m3rd ^ 64'h8000000000008003;
+                    16: m3wd = m3rd ^ 64'h8000000000008002;
+                    17: m3wd = m3rd ^ 64'h8000000000000080;
+                    18: m3wd = m3rd ^ 64'h000000000000800a;
+                    19: m3wd = m3rd ^ 64'h800000008000000a;
+                    20: m3wd = m3rd ^ 64'h8000000080008081;
+                    21: m3wd = m3rd ^ 64'h8000000000008080;
+                    22: m3wd = m3rd ^ 64'h0000000080000001;
+                    23: m3wd = m3rd ^ 64'h8000000080008008;
+                    default: m3wd = m3rd;
+				endcase
+			end
+			
 			default: begin
 				m3wx = 0;
 				m3wy = 0;
@@ -536,6 +575,15 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 				cy = 0;
 			end
 		endcase
+	end
+	
+	//rnd
+	always_ff @(posedge clk or posedge rst) begin
+		if(rst) begin
+			rnd <= #1 0;
+		end else begin
+			rnd <= #1 0;////////////////////////////////////////
+		end
 	end
 	
 	//buffer1
