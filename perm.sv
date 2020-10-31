@@ -37,6 +37,7 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 	IDLE,
 	INPUT_D,
 	THETA_1,
+	BUFFER_12,
 	THETA_2,
 	BUFFER,
 	THETA_3,
@@ -105,13 +106,15 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 			end
 			
 			THETA_1: begin
-				if(x == 4 && y == 4) begin
+				if(x == 4 && y == 4 && buffer == 1) begin
 					$display("\nFINISHED THETA_1 %t\n", $time);
-					ns = THETA_2;
+					ns = BUFFER_12;
 				end else begin
 					ns = THETA_1;
 				end
 			end
+
+			BUFFER_12: ns = THETA_2;
 			
 			THETA_2: begin		//stored in m2(y=0)
 				if(x == 4 && y == 0 && !buffer1) begin
@@ -162,7 +165,7 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 				if(x == 4 && y == 4 && rnd < 23) begin
 					$display("\nFINISHED RND%d %t\n", rnd, $time);
 					ns = THETA_1;
-				end else if (x == 4 && y == 4 && rnd == 1) begin
+				end else if (x == 4 && y == 4 && rnd == 23) begin
 					$display("\nFINISHED  ALL RND %t\n", $time);
 					ns = OUT_D;
 				end else begin
@@ -567,7 +570,14 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 			end
 			
 			THETA_1: begin			//5x5
-				cxy55();
+				if(y == 4) begin
+					if(buffer == 1) begin
+						cxy55();
+					end else begin
+						cx = x;
+						cy = y;
+					end
+				end else cxy55();
 			end
 			
 			THETA_2: begin
@@ -612,7 +622,7 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 			rnd <= #1 0;
 		end else begin
 			if(cs == RND_END && x == 4 && y == 4) begin
-				if(rnd < 1) rnd <= #1 rnd + 1;				////////////////
+				if(rnd < 23) rnd <= #1 rnd + 1;				////////////////
 				else rnd <= #1 0;
 			end else begin
 				rnd <= #1 rnd;
@@ -644,6 +654,11 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 	always_ff @(posedge clk or posedge rst) begin
 		if(!rst) begin
 			case(cs)
+				THETA_1: begin
+					if(y == 4) buffer <= #1 1;
+					else buffer <= #1 0;
+				end
+
 				THETA_2: begin
 					if(buffer == 0) buffer <= #1 1;
 					else buffer <= #1 0;
@@ -691,7 +706,7 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 			case(cs)
 				THETA_1: begin
 					if(y == 0) temp_c <= #1 m1rd;
-					else if (y < 4) temp_c <= #1 temp_c ^ m1rd;
+					else if (y < 4 || (y == 4 && buffer == 0)) temp_c <= #1 temp_c ^ m1rd;
 					else begin 
 						$display("x%dy%d, temp_c%h, rd%h, acc%h,", x, y, temp_c, m1rd, temp_c_acc);
 						temp_c <= #1 0;
@@ -715,7 +730,7 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 	//temp_c_acc
 	always_ff @(posedge clk or posedge rst) begin
 		if(!rst) begin
-			if (y < 4) temp_c_acc <= #1 m1rd ^ temp_c;
+			if (y < 4 || (y == 4 && buffer == 0)) temp_c_acc <= #1 m1rd ^ temp_c;
 			else temp_c_acc <= #1 0;
 		end else begin
 			temp_c_acc <= #1 0;
@@ -748,8 +763,19 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 	//stopin, change all !rst to rst
 	always_ff @(posedge clk or posedge rst) begin
 		if(!rst) begin
-			if(cs == INPUT_D && (cx == 4 && cy == 4)) stopin <= #1 0;
-			else if(pushin && (x == 4 && y == 4)) stopin <= #1 1;
+			//if(cs == INPUT_D && (cx == 4 && cy == 4)) stopin <= #1 0;
+			//else if(pushin && (cx == 4 && cy == 4)) stopin <= #1 1;
+			case(cs)
+				IDLE: stopin <= #1 0;
+				INPUT_D: begin
+					if(cx == 4 && cy == 4) stopin <= #1 1;
+					else if(stopin) stopin <= #1 1;
+					else stopin <= #1 0;
+				end
+
+				default: stopin <= #1 1;
+			endcase
+			
 		end else begin
 			stopin <= #1 0;
 		end
