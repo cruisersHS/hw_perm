@@ -451,12 +451,8 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 			
 			CHI: begin
 				m2ry = y;
-				case(buffer)
-					0: m2rx = `add_1(x);
-					default: begin
-						m2rx = x;
-					end
-				endcase
+				if (buffer < 1) m2rx = `add_1(x);
+				else m2rx = x;
 			end
 			
 			default: begin
@@ -714,13 +710,9 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 	always @(*) begin
 		case(cs)
 			CHI: begin
-				m2ry = y;
-				case(buffer)
-					0: m4rx = `add_2(x);
-					default: begin
-						m4rx = x;
-					end
-				endcase
+				m4ry = y;
+				if(buffer >= 1) m4rx = x;
+				else m4rx = `add_2(x);
 			end
 			
 			default: begin
@@ -906,7 +898,8 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 				CHI: begin
 					case(buffer)
 						0: temp_c2 <= #1 (m2rd ^ 64'hffffffffffffffff) & m4rd;
-						1: temp_c2 <= #1 temp_c2 ^ m4rd;
+						1: temp_c2 <= #1 temp_c2 ^ m2rd;
+						2: temp_c2 <= #1 temp_c2;
 						//2: temp_c2 <= #1 temp_c2;
 						//1: temp_c2 <= #1 temp_c2 & m2rd;
 						//2: temp_c2 <= #1 temp_c2 ^ m2rd;
