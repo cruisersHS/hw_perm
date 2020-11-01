@@ -40,9 +40,7 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 	CHI,
 	IOTA,
 	RND_END,
-	BUFFER_OUT,
-	OUT_D,
-	BUFFER_OUT2
+	BUFFER_OUT
 	} cs, ns;
 	
 	reg [2:0] x, y, cx, cy;
@@ -159,28 +157,22 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 			end
 			
 			RND_END: begin		//m3 -> m1 -> out(when rnd24), cyx
-				if(x == 4 && y == 4 && rnd < 23) begin
+				if(x == 4 && y == 4) begin
 					//$display("\nFINISHED RND%d %t\n", rnd, $time);
-					ns = THETA_1;
-				end else if (x == 4 && y == 4 && rnd == 23) begin
-					//$display("\nFINISHED  ALL RND %t\n", $time);
 					ns = BUFFER_OUT;
+					if(rnd == 23) begin
+						if(!stopout) ns = BUFFER_OUT;
+						else ns = RND_END;
+					end else ns = BUFFER_OUT;
 				end else begin
 					ns = RND_END;
 				end
 			end
 
-			BUFFER_OUT: ns = OUT_D;
-			
-			OUT_D: begin
-				if(x == 4 && y == 4 && !stopout) begin
-					ns = BUFFER_OUT2;
-				end else begin
-					ns = OUT_D;
-				end
+			BUFFER_OUT: begin
+				if(rnd == 23) ns = IDLE;
+				else ns = THETA_1;
 			end
-			
-			BUFFER_OUT2: ns = IDLE;
 
 			default: begin
 				ns = IDLE;
@@ -249,7 +241,7 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 				m1ry = y;
 			end
 			
-			OUT_D: begin
+			RND_END: begin
 				m1rx = x;
 				m1ry = y;
 			end
@@ -775,13 +767,11 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 			end
 			
 			RND_END: begin
-				cyx55();
-			end
-			
-			OUT_D: begin
-				if(stopout) begin
-					cx = x;
-					cy = y;
+				if(rnd == 23) begin
+					if(stopout) begin
+						cx = x;
+						cy = y;
+					end else cyx55();
 				end else cyx55();
 			end
 			
@@ -796,9 +786,9 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 	always_comb begin
 		if(rst) dout <= #1 0;
 		else begin
-			if(cs == OUT_D && !stopout) begin
-				dout <= #1 m1rd;
-				//$display("DOUTx%dy%d = %h, %t", x, y, m1rd, $time);
+			if(cs == RND_END && !stopout && rnd == 23) begin
+				dout <= #1 m3rd;
+				//$display("DOUTx%dy%d = %h, %t", x, y, m3rd, $time);
 			end else dout <= #1 0;
 		end
 	end
@@ -807,7 +797,7 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 	always_comb begin
 		if(rst) firstout <= #1 0;
 		else begin
-			if(cs == OUT_D && x == 0 && y == 0 && !stopout) firstout <= #1 1;
+			if(cs == RND_END && x == 0 && y == 0 && !stopout && rnd == 23) firstout <= #1 1;
 			else firstout <= #1 0;
 		end
 	end
@@ -816,7 +806,7 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 	always_comb begin
 		if(rst) pushout <= #1 0;
 		else begin
-			if(cs == OUT_D && !stopout) pushout <= #1 1;
+			if(cs == RND_END && !stopout && rnd == 23) pushout <= #1 1;
 			else pushout <= #1 0;
 		end
 	end
@@ -826,7 +816,7 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 		if(rst) begin
 			rnd <= #1 0;
 		end else begin
-			if(cs == RND_END && x == 4 && y == 4) begin
+			if(cs == BUFFER_OUT) begin
 				if(rnd < 23) rnd <= #1 rnd + 1;
 				else rnd <= #1 0;
 			end else begin
@@ -980,18 +970,17 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 	end
 	
 	//stopin, change all !rst to rst
-	always_ff @(posedge clk or posedge rst) begin
+	always_comb begin
 		if(rst) begin
 			stopin <= #1 0;
 		end else begin
 			case(cs)
 				IDLE: stopin <= #1 0;
-				INPUT_D: begin
-					if(x == 4 && y == 4) stopin <= #1 1;
-					else if(stopin) stopin <= #1 1;
-					else stopin <= #1 0;
-				end
-				BUFFER_OUT2: stopin <= #1 0;
+				INPUT_D: stopin <= #1 0;
+				/*BUFFER_OUT: begin
+					if(rnd == 23) stopin <= #1 0;
+					else stopin <= #1 1;
+				end*/
 				default: stopin <= #1 1;
 			endcase
 		end
@@ -1008,7 +997,7 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 		end
 	end
 	
-	always @(negedge pushin) $display("PUSHIN 1 -> 0 %t", $time);
+	//always @(negedge pushin) $display("PUSHIN 1 -> 0 %t", $time);
 	
 endmodule
 
