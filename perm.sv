@@ -27,11 +27,6 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 	output reg pushout, input stopout, output reg firstout, output reg [63:0] dout
 	);
 	
-	//reg stopin_d;
-	//reg pushout_d;
-	//reg firstout_d;
-	//reg [63:0] dout_d;
-
 	
 	enum [3:0] {
 	IDLE,
@@ -151,7 +146,7 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 			end
 			
 			CHI: begin
-				if(x == 4 && y == 4 && buffer == 3) begin
+				if(x == 4 && y == 4 && buffer == 2) begin
 					//$display("\nFINISHED CHI %t\n", $time);
 					ns = IOTA;
 				end else begin
@@ -168,7 +163,7 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 					//$display("\nFINISHED RND%d %t\n", rnd, $time);
 					ns = THETA_1;
 				end else if (x == 4 && y == 4 && rnd == 23) begin
-					$display("\nFINISHED  ALL RND %t\n", $time);
+					//$display("\nFINISHED  ALL RND %t\n", $time);
 					ns = BUFFER_OUT;
 				end else begin
 					ns = RND_END;
@@ -193,12 +188,12 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 		endcase
 	end
 	
-	assign m4rx = 0;
+	/* assign m4rx = 0;
 	assign m4ry = 0;
 	assign m4wx = 0;
 	assign m4wy = 0;
 	assign m4wr = 0;
-	assign m4wd = 0;
+	assign m4wd = 0; */
 	
 	//m1 write
 	always @(*) begin
@@ -274,7 +269,6 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 				m2wy = 0;
 				m2wd = temp_c_acc;
 				m2wr = 1;
-				//$display("THETA_1, m2wd(%d) = %h, cx%dcy%d, %t", m2wx, m2wd, cx, cy, $time);
 			end
 			
 			THETA_2: begin
@@ -459,11 +453,8 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 				m2ry = y;
 				case(buffer)
 					0: m2rx = `add_1(x);
-					1: m2rx = `add_2(x);
-					2: m2rx = x;
-					3: m2rx = x;
 					default: begin
-						m2rx = 0;
+						m2rx = x;
 					end
 				endcase
 			end
@@ -566,6 +557,178 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 		endcase
 	end
 	
+	//m4 write
+	always @(*) begin
+		case(cs)
+			RHO_PI: begin
+				m4wr = 1;
+				case({1'b0,x,1'b0,y})
+					8'h00: begin
+						m4wx = 0;
+						m4wy = 0;
+						m4wd = m3rd;
+					end
+					8'h10: begin
+						m4wx = 0;
+						m4wy = 2;
+						m4wd = `sub64(m3rd);
+					end
+					8'h20: begin
+						m4wx = 0;
+						m4wy = 4;
+						m4wd = `sub64_n(m3rd, 62);
+					end
+					8'h30: begin
+						m4wx = 0;
+						m4wy = 1;
+						m4wd = `sub64_n(m3rd, 28);
+					end
+					8'h40: begin
+						m4wx = 0;
+						m4wy = 3;
+						m4wd = `sub64_n(m3rd, 27);
+					end
+					
+					8'h01: begin
+						m4wx = 1;
+						m4wy = 3;
+						m4wd = `sub64_n(m3rd, 36);
+					end
+					8'h11: begin
+						m4wx = 1;
+						m4wy = 0;
+						m4wd = `sub64_n(m3rd, 44);
+					end
+					8'h21: begin
+						m4wx = 1;
+						m4wy = 2;
+						m4wd = `sub64_n(m3rd, 6);
+					end
+					8'h31: begin
+						m4wx = 1;
+						m4wy = 4;
+						m4wd = `sub64_n(m3rd, 55);
+					end
+					8'h41: begin
+						m4wx = 1;
+						m4wy = 1;
+						m4wd = `sub64_n(m3rd, 20);
+					end
+					
+					8'h02: begin
+						m4wx = 2;
+						m4wy = 1;
+						m4wd = `sub64_n(m3rd, 3);
+					end
+					8'h12: begin
+						m4wx = 2;
+						m4wy = 3;
+						m4wd = `sub64_n(m3rd, 10);
+					end
+					8'h22: begin
+						m4wx = 2;
+						m4wy = 0;
+						m4wd = `sub64_n(m3rd, 43);
+					end
+					8'h32: begin
+						m4wx = 2;
+						m4wy = 2;
+						m4wd = `sub64_n(m3rd, 25);
+					end
+					8'h42: begin
+						m4wx = 2;
+						m4wy = 4;
+						m4wd = `sub64_n(m3rd, 39);
+					end
+					
+					8'h03: begin
+						m4wx = 3;
+						m4wy = 4;
+						m4wd = `sub64_n(m3rd, 41);
+					end
+					8'h13: begin
+						m4wx = 3;
+						m4wy = 1;
+						m4wd = `sub64_n(m3rd, 45);
+					end
+					8'h23: begin
+						m4wx = 3;
+						m4wy = 3;
+						m4wd = `sub64_n(m3rd, 15);
+					end
+					8'h33: begin
+						m4wx = 3;
+						m4wy = 0;
+						m4wd = `sub64_n(m3rd, 21);
+					end
+					8'h43: begin
+						m4wx = 3;
+						m4wy = 2;
+						m4wd = `sub64_n(m3rd, 8);
+					end
+					
+					8'h04: begin
+						m4wx = 4;
+						m4wy = 2;
+						m4wd = `sub64_n(m3rd, 18);
+					end
+					8'h14: begin
+						m4wx = 4;
+						m4wy = 4;
+						m4wd = `sub64_n(m3rd, 2);
+					end
+					8'h24: begin
+						m4wx = 4;
+						m4wy = 1;
+						m4wd = `sub64_n(m3rd, 61);
+					end
+					8'h34: begin
+						m4wx = 4;
+						m4wy = 3;
+						m4wd = `sub64_n(m3rd, 56);
+					end
+					8'h44: begin
+						m4wx = 4;
+						m4wy = 0;
+						m4wd = `sub64_n(m3rd, 14);
+					end
+					
+					default: begin
+						m4wx = 0;
+						m4wy = 0;
+						m4wd = 0;
+					end
+				endcase
+			end
+			
+			default: begin
+				m4wx = 0;
+				m4wy = 0;
+				m4wr = 0;
+				m4wd = 0;
+			end
+		endcase
+	end
+	
+	//m4 read
+	always @(*) begin
+		case(cs)
+			CHI: begin
+				m2ry = y;
+				case(buffer)
+					0: m4rx = `add_2(x);
+					default: begin
+						m4rx = x;
+					end
+				endcase
+			end
+			
+			default: begin
+				m4rx = 0;
+				m4ry = 0;
+			end
+		endcase
+	end
 	
 	//cx, cy, always use x, y for assignment
 	always @(*) begin
@@ -612,7 +775,7 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 			end
 			
 			CHI: begin		//x then y
-				if(buffer == 3) cyx55();
+				if(buffer == 2) cyx55();
 				else begin
 					cx = x;
 					cy = y;
@@ -643,7 +806,7 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 		else begin
 			if(cs == OUT_D && !stopout) begin
 				dout <= #1 m1rd;
-				$display("DOUTx%dy%d = %h, %t", x, y, m1rd, $time);
+				//$display("DOUTx%dy%d = %h, %t", x, y, m1rd, $time);
 			end else dout <= #1 0;
 		end
 	end
@@ -718,10 +881,13 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 				
 				CHI: begin
 					case(buffer)
-						0: buffer <= #1 1;
+						/* 0: buffer <= #1 1;
 						1: buffer <= #1 2;
 						2: buffer <= #1 3;
-						3: buffer <= #1 0;
+						3: buffer <= #1 0; */
+						0: buffer <= #1 1;
+						1: buffer <= #1 2;
+						2: buffer <= #1 0;
 						default: buffer <= #1 0;
 					endcase
 				end
@@ -739,9 +905,11 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 			case(cs)
 				CHI: begin
 					case(buffer)
-						0: temp_c2 <= #1 m2rd ^ 64'hffffffffffffffff;
-						1: temp_c2 <= #1 temp_c2 & m2rd;
-						2: temp_c2 <= #1 temp_c2 ^ m2rd;
+						0: temp_c2 <= #1 (m2rd ^ 64'hffffffffffffffff) & m4rd;
+						1: temp_c2 <= #1 temp_c2 ^ m4rd;
+						//2: temp_c2 <= #1 temp_c2;
+						//1: temp_c2 <= #1 temp_c2 & m2rd;
+						//2: temp_c2 <= #1 temp_c2 ^ m2rd;
 						default: temp_c2 <= #1 0;
 					endcase
 				end
@@ -762,16 +930,24 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 					if(y == 0) temp_c <= #1 m1rd;
 					else if (y < 4 || (y == 4 && buffer == 0)) temp_c <= #1 temp_c ^ m1rd;
 					else begin 
-						//$display("x%dy%d, temp_c%h, rd%h, acc%h,", x, y, temp_c, m1rd, temp_c_acc);
 						temp_c <= #1 0;
 					end
 				end
 				THETA_2: begin
 					if(buffer == 1 && y == 0) begin
 						temp_c <= #1 (m2rd ^ `sub64(m3rd));
-						//$monitor("temp_c calc:x%dy%dwr%d m2rd:%h, m3rd:%h, tempc:%h, %t", x, y, m2wr, m2rd, m3rd, temp_c, $time);
 					end
 				end
+				
+				/* CHI: begin
+					case(buffer)
+						0: temp_c <= #1 m4rd;
+						1: temp_c <= #1 temp_c;
+						2: temp_c <= #1 temp_c;
+						default: temp_c <= #1 0;
+					endcase
+				end */
+				
 				default: temp_c <= #1 0;
 			endcase
 		end
@@ -793,7 +969,7 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 			write_rdy <= #1 0;
 		end else begin
 			if(pushin && !stopin) begin
-				$display("pushin received!! push data is %h %t", din, $time);
+				//$display("pushin received!! push data is %h %t", din, $time);
 				write_rdy <= #1 1;
 			end else begin
 				write_rdy <= #1 0;
@@ -838,6 +1014,8 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 			y <= #1 cy;
 		end
 	end
+	
+	always @(negedge pushin) $display("PUSHIN 1 -> 0 %t", $time);
 	
 endmodule
 
