@@ -178,7 +178,7 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 			BUFFER_OUT: ns = OUT_D;
 			
 			OUT_D: begin
-				if(x == 4 && y == 4) begin
+				if(x == 4 && y == 4 && !stopout) begin
 					ns = BUFFER_OUT2;
 				end else begin
 					ns = OUT_D;
