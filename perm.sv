@@ -49,7 +49,7 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 	reg buffer1;
 	reg [4:0] rnd;		//round 0 to 23
 	
-	reg [63:0] temp_c, temp_c_acc, temp_c2;
+	reg [63:0] temp_c, temp_c_acc, temp_c2, temp_chi;
 	
 	
 	//update cx, cy 5 by 5, y0-5 then x+1
@@ -142,8 +142,8 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 			end
 			
 			CHI: begin
-				if(x == 4 && y == 4 && buffer == 2) begin
-					//$display("FINISHED CHI %t", $time);
+				if(x == 4 && y == 4) begin
+					//$display("FINISHED CHI %t", $time);				//maybe add a buffer
 					ns = IOTA;
 				end else begin
 					ns = CHI;
@@ -211,6 +211,147 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 				m1wd = din;
 			end
 			
+			RHO_PI: begin
+				m1wr = 1;
+				case({1'b0,x,1'b0,y})
+					8'h00: begin
+						m1wx = 0;
+						m1wy = 0;
+						m1wd = m3rd;
+					end
+					8'h10: begin
+						m1wx = 0;
+						m1wy = 2;
+						m1wd = `sub64(m3rd);
+					end
+					8'h20: begin
+						m1wx = 0;
+						m1wy = 4;
+						m1wd = `sub64_n(m3rd, 62);
+					end
+					8'h30: begin
+						m1wx = 0;
+						m1wy = 1;
+						m1wd = `sub64_n(m3rd, 28);
+					end
+					8'h40: begin
+						m1wx = 0;
+						m1wy = 3;
+						m1wd = `sub64_n(m3rd, 27);
+					end
+					
+					8'h01: begin
+						m1wx = 1;
+						m1wy = 3;
+						m1wd = `sub64_n(m3rd, 36);
+					end
+					8'h11: begin
+						m1wx = 1;
+						m1wy = 0;
+						m1wd = `sub64_n(m3rd, 44);
+					end
+					8'h21: begin
+						m1wx = 1;
+						m1wy = 2;
+						m1wd = `sub64_n(m3rd, 6);
+					end
+					8'h31: begin
+						m1wx = 1;
+						m1wy = 4;
+						m1wd = `sub64_n(m3rd, 55);
+					end
+					8'h41: begin
+						m1wx = 1;
+						m1wy = 1;
+						m1wd = `sub64_n(m3rd, 20);
+					end
+					
+					8'h02: begin
+						m1wx = 2;
+						m1wy = 1;
+						m1wd = `sub64_n(m3rd, 3);
+					end
+					8'h12: begin
+						m1wx = 2;
+						m1wy = 3;
+						m1wd = `sub64_n(m3rd, 10);
+					end
+					8'h22: begin
+						m1wx = 2;
+						m1wy = 0;
+						m1wd = `sub64_n(m3rd, 43);
+					end
+					8'h32: begin
+						m1wx = 2;
+						m1wy = 2;
+						m1wd = `sub64_n(m3rd, 25);
+					end
+					8'h42: begin
+						m1wx = 2;
+						m1wy = 4;
+						m1wd = `sub64_n(m3rd, 39);
+					end
+					
+					8'h03: begin
+						m1wx = 3;
+						m1wy = 4;
+						m1wd = `sub64_n(m3rd, 41);
+					end
+					8'h13: begin
+						m1wx = 3;
+						m1wy = 1;
+						m1wd = `sub64_n(m3rd, 45);
+					end
+					8'h23: begin
+						m1wx = 3;
+						m1wy = 3;
+						m1wd = `sub64_n(m3rd, 15);
+					end
+					8'h33: begin
+						m1wx = 3;
+						m1wy = 0;
+						m1wd = `sub64_n(m3rd, 21);
+					end
+					8'h43: begin
+						m1wx = 3;
+						m1wy = 2;
+						m1wd = `sub64_n(m3rd, 8);
+					end
+					
+					8'h04: begin
+						m1wx = 4;
+						m1wy = 2;
+						m1wd = `sub64_n(m3rd, 18);
+					end
+					8'h14: begin
+						m1wx = 4;
+						m1wy = 4;
+						m1wd = `sub64_n(m3rd, 2);
+					end
+					8'h24: begin
+						m1wx = 4;
+						m1wy = 1;
+						m1wd = `sub64_n(m3rd, 61);
+					end
+					8'h34: begin
+						m1wx = 4;
+						m1wy = 3;
+						m1wd = `sub64_n(m3rd, 56);
+					end
+					8'h44: begin
+						m1wx = 4;
+						m1wy = 0;
+						m1wd = `sub64_n(m3rd, 14);
+					end
+					
+					default: begin
+						m1wx = 0;
+						m1wy = 0;
+						m1wd = 0;
+					end
+				endcase
+			end
+			
 			RND_END: begin
 				m1wx = x;
 				m1wy = y;
@@ -236,6 +377,11 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 			end
 			
 			THETA_3: begin
+				m1rx = x;
+				m1ry = y;
+			end
+			
+			CHI: begin
 				m1rx = x;
 				m1ry = y;
 			end
@@ -442,8 +588,7 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 			
 			CHI: begin
 				m2ry = y;
-				if (buffer < 1) m2rx = `add_1(x);
-				else m2rx = x;
+				m2rx = `add_1(x);
 			end
 			
 			default: begin
@@ -474,7 +619,7 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 				m3wx = x;
 				m3wy = y;
 				m3wr = 1;
-				m3wd = temp_c2;
+				m3wd = chi;
 			end
 			
 			IOTA: begin
@@ -702,8 +847,7 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 		case(cs)
 			CHI: begin
 				m4ry = y;
-				if(buffer >= 1) m4rx = x;
-				else m4rx = `add_2(x);
+				m4rx = `add_2(x);
 			end
 			
 			default: begin
@@ -762,11 +906,12 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 			end
 			
 			CHI: begin		//x then y
-				if(buffer == 2) cyx55();
+				cyx55();
+				/* if(buffer == 2) cyx55();
 				else begin
 					cx = x;
 					cy = y;
-				end
+				end */
 			end
 			
 			RND_END: begin
@@ -788,6 +933,9 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 	
 	//dout
 	assign dout = m3rd;
+	
+	//chi
+	assign chi = ((m2rd ^ 64'hffffffffffffffff) & m4rd) ^ m1rd;
 	
 	//firstout
 	always_comb begin
@@ -849,18 +997,14 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 					else buffer <= #1 0;
 				end
 				
-				CHI: begin
+				/* CHI: begin
 					case(buffer)
-						/* 0: buffer <= #1 1;
-						1: buffer <= #1 2;
-						2: buffer <= #1 3;
-						3: buffer <= #1 0; */
 						0: buffer <= #1 1;
 						1: buffer <= #1 2;
 						2: buffer <= #1 0;
 						default: buffer <= #1 0;
 					endcase
-				end
+				end */
 				
 				default: buffer <= #1 0;
 			endcase
