@@ -619,7 +619,7 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 				m3wx = x;
 				m3wy = y;
 				m3wr = 1;
-				m3wd = chi;
+				m3wd = temp_chi;
 			end
 			
 			IOTA: begin
@@ -934,8 +934,8 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 	//dout
 	assign dout = m3rd;
 	
-	//chi
-	assign chi = ((m2rd ^ 64'hffffffffffffffff) & m4rd) ^ m1rd;
+	//temp_chi
+	assign temp_chi = ((m2rd ^ 64'hffffffffffffffff) & m4rd) ^ m1rd;
 	
 	//firstout
 	always_comb begin
