@@ -191,7 +191,7 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 		case(cs)
 			IDLE: begin
 				if(pushin && !stopin) begin
-					$display("INPUT(IDLE),x%dy%d, first%d, push%d, stop%d, din=%h, %t", x, y, firstin, pushin, stopin, din, $time);
+					//$display("INPUT(IDLE),x%dy%d, first%d, push%d, stop%d, din=%h, %t", x, y, firstin, pushin, stopin, din, $time);
 					m1wx = x;
 					m1wy = y;
 					m1wr = 1;
@@ -204,7 +204,7 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 				end
 			end
 			INPUT_D: begin
-				$display("INPUT,x%dy%d, first%d, push%d, stop%d, din=%h, %t", x, y, firstin, pushin, stopin, din, $time);
+				//$display("INPUT,x%dy%d, first%d, push%d, stop%d, din=%h, %t", x, y, firstin, pushin, stopin, din, $time);
 				m1wx = x;
 				m1wy = y;
 				m1wr = 1;
@@ -788,18 +788,6 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 	
 	//dout
 	assign dout = m3rd;
-	always @(dout) begin
-		//if(cs == RND_END && rnd == 23) $display("x%dy%d first%d push%d stop%d dout=%h %t", x, y, firstout, pushout, stopout, dout, $time);
-	end
-	/*always_comb begin
-		if(rst) dout <= #1 0;
-		else begin
-			if(cs == RND_END && !stopout && rnd == 23) begin
-				dout <= #1 m3rd;
-				$display("DOUTx%dy%d = %h, %t", x, y, m3rd, $time);
-			end else dout <= #1 0;
-		end
-	end*/
 	
 	//firstout
 	always_comb begin
@@ -1002,9 +990,9 @@ module perm_blk(input clk, input rst, input pushin, output reg stopin,
 	end
 	
 	//always @(negedge pushin) $display("cs = %s,PUSHIN 1 -> 0, pushin%d %t", cs, pushin, $time);
-	always @(posedge stopin) $display("cs = %s, STOPIN 0 ->1 %t", cs, $time);
-	always @(negedge stopin) $display("cs = %s, STOPIN 1->0 %t", cs, $time);
-	always @(cs) $display("cs = %s, rnd=%d %t", cs, rnd, $time);
+	//always @(posedge stopin) $display("cs = %s, STOPIN 0 ->1 %t", cs, $time);
+	//always @(negedge stopin) $display("cs = %s, STOPIN 1->0 %t", cs, $time);
+	//always @(cs) $display("cs = %s, rnd=%d %t", cs, rnd, $time);
 	
 endmodule
 
