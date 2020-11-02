@@ -51,6 +51,9 @@ enum [3:0] { IDLE,
        PUSH_DOUT
      } curr_state, n_state;
 
+always @(negedge pushin) $display("pushin 1 -> 0 pushin%d %t", pushin, $time);
+always @(posedge stopin) $display("stopin 0->1 stopin%d %t", stopin, $time);
+
 always_ff @(posedge clk or posedge rst) begin
    if(rst)
       en <= #1 0;
